@@ -1,0 +1,143 @@
+{
+    "name": "xliff-auto-sync",
+    "displayName": "XLIFF Auto Sync",
+    "description": "Automatically sync XLIFF translations after every Git commit and commit them for you.",
+    "version": "1.0.0",
+    "publisher": "Florian-Noever",
+    "license": "MIT",
+    "icon": "assets/icon.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Florian-Noever/xliff-auto-sync"
+    },
+    "bugs": {
+        "url": "https://github.com/Florian-Noever/xliff-auto-sync/issues"
+    },
+    "homepage": "https://github.com/Florian-Noever/xliff-auto-sync",
+    "markdown": "github",
+    "qna": "github",
+    "keywords": [
+        "AL",
+        "AL Language",
+        "Business Central",
+        "Dynamics 365",
+        "XLIFF",
+        "XLF",
+        "Translation",
+        "Git",
+        "Commit",
+        "XLIFF Sync"
+    ],
+    "engines": {
+        "vscode": "^1.105.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "extensionKind": [
+        "workspace"
+    ],
+    "extensionDependencies": [
+        "rvanbekkum.xliff-sync",
+        "vscode.git"
+    ],
+    "capabilities": {
+        "untrustedWorkspaces": {
+            "supported": false,
+            "description": "XLIFF Auto Sync runs the configured sync command and creates Git commits, which requires a trusted workspace."
+        },
+        "virtualWorkspaces": {
+            "supported": false,
+            "description": "XLIFF Auto Sync requires a local Git repository."
+        }
+    },
+    "activationEvents": [
+        "workspaceContains:**/*.xlf",
+        "workspaceContains:**/*.xliff"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "xliffAutoSync.commitTranslations",
+                "title": "Commit Translations",
+                "category": "XLIFF Auto Sync"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "xliffAutoSync.commitTranslations",
+                    "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "XLIFF Auto Sync",
+            "properties": {
+                "xliffAutoSync.syncCommand": {
+                    "type": "string",
+                    "default": "xliffSync.buildWithTranslations",
+                    "scope": "resource",
+                    "markdownDescription": "Command that syncs the XLIFF translation files. Defaults to **XLIFF Sync: Build with Translations**."
+                },
+                "xliffAutoSync.commitAfterSync": {
+                    "type": "string",
+                    "enum": [
+                        "always",
+                        "never"
+                    ],
+                    "enumDescriptions": [
+                        "Commit the synced translation files after every commit made in VS Code.",
+                        "Only sync the translation files and leave them uncommitted."
+                    ],
+                    "default": "always",
+                    "scope": "resource",
+                    "markdownDescription": "Whether to commit the synced translation files after a commit made in VS Code. The **Commit Translations** command always commits."
+                },
+                "xliffAutoSync.pushAfterCommit": {
+                    "type": "string",
+                    "enum": [
+                        "always",
+                        "never"
+                    ],
+                    "enumDescriptions": [
+                        "Push the branch after the translations were committed.",
+                        "Never push automatically."
+                    ],
+                    "default": "never",
+                    "scope": "resource",
+                    "markdownDescription": "Whether to push the branch after the translations were committed. Only branches that already track an upstream branch are pushed."
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "npm run check-types && npm run lint && node esbuild.mjs",
+        "watch": "node ./node_modules/npm-run-all/bin/npm-run-all/index.js -p watch:*",
+        "watch:esbuild": "node esbuild.mjs --watch",
+        "watch:tsc": "node ./node_modules/typescript/bin/tsc --noEmit --watch --project tsconfig.json",
+        "package": "node ./node_modules/@vscode/vsce/vsce package --no-dependencies",
+        "compile-tests": "node esbuild.mjs --tests",
+        "pretest": "npm run check-types && npm run compile-tests",
+        "check-types": "node ./node_modules/typescript/bin/tsc --noEmit",
+        "lint": "node ./node_modules/eslint/bin/eslint.js src",
+        "test": "node ./out/test/runTests.js"
+    },
+    "devDependencies": {
+        "@types/mocha": "^10.0.10",
+        "@types/node": "22.x",
+        "@types/vscode": "~1.105.0",
+        "@typescript-eslint/eslint-plugin": "^8.71.1",
+        "@typescript-eslint/parser": "^8.71.1",
+        "@vscode/test-cli": "^0.0.15",
+        "@vscode/test-electron": "^3.1.0",
+        "@vscode/vsce": "^4.0.0",
+        "esbuild": "^0.28.2",
+        "eslint": "^10.12.0",
+        "mocha": "^12.0.3",
+        "npm-run-all": "^4.1.5",
+        "typescript": "~6.0.3"
+    }
+}

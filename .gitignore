@@ -147,3 +147,14 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# VSCode
+out
+dist
+node_modules
+.vscode-test/
+*.vsix
+
+# AI
+CLAUDE.md
+copilot-instructions.md
