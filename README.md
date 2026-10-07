@@ -1,4 +1,4 @@
-# <img src="./assets/icon.png" alt="" height="26"> XLIFF Auto Sync
+# <img src="./assets/icon.png" alt="" height="32"> XLIFF Auto Sync
 
 Keep your XLIFF translation files in sync without thinking about it. After every commit you make in VS Code, XLIFF Auto Sync runs [XLIFF Sync](https://marketplace.visualstudio.com/items?itemName=rvanbekkum.xliff-sync) and commits the updated `.xlf` / `.xliff` files as a separate `Xliff Translations` commit. It is built for AL / Business Central projects and works with any command that updates XLIFF files.
 
