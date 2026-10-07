@@ -83,11 +83,11 @@ npm test
 npm run package
 ```
 
-### Release
+### CI & Releases
 
-1. Bump `version` in `package.json` and add an entry to `CHANGELOG.md`
-2. Publish a GitHub release tagged `v<version>`
-3. **Build and Package Extension** runs the tests and attaches the `.vsix` to the release, then **Publish Extension** publishes it to the Visual Studio Marketplace
+CI runs on every push and pull request through the shared workflows of [Florian-Noever/Florian-Noever](https://github.com/Florian-Noever/Florian-Noever/blob/main/.github/CI.md). It runs the integration tests in VS Code and packs a preview VSIX.
+
+To release, bump the version with `npm version x.y.z --no-git-tag-version` and publish a GitHub release `vx.y.z` from a commit whose CI is green. The publish workflow builds and tests the tag, attaches the VSIX to the release and publishes it to the Visual Studio Marketplace.
 
 ---
 

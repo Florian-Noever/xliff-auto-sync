@@ -1,19 +1,26 @@
+name: CI
+
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
 
-name: CI
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+  extension:
+    uses: Florian-Noever/Florian-Noever/.github/workflows/vscode-extension-ci.yml@v1
+    with:
+      test-command: npm test
 
-      - name: Run integration tests
-        uses: ./.github/actions/vscode-test
-
-      - name: Lint
-        run: npm run lint
+  automerge:
+    needs: extension
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: Florian-Noever/Florian-Noever/.github/workflows/dependabot-automerge.yml@v1
