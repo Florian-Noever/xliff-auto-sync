@@ -2,7 +2,7 @@
     "name": "xliff-auto-sync",
     "displayName": "XLIFF Auto Sync",
     "description": "Automatically sync XLIFF translations after every Git commit and commit them for you.",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "publisher": "Florian-Noever",
     "license": "MIT",
     "icon": "assets/icon.png",
