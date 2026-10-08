@@ -10,7 +10,7 @@ Keep your XLIFF translation files in sync without thinking about it. After every
 - **Separate translation commit** — only XLIFF files (`.xlf`, `.xliff`) are staged and committed; all other changes in your working tree stay untouched
 - **Manual command** — **XLIFF Auto Sync: Commit Translations** syncs and commits the translations on demand
 - **Optional push** — push the branch after the translation commit (opt-in)
-- **Safe by default** — failed commits, repositories without XLIFF files, merge conflicts, rebases and staged non-XLIFF changes never trigger a sync or a commit
+- **Safe by default** — failed commits, repositories without XLIFF files, merge conflicts, rebases and staged non-XLIFF changes never trigger a sync or a commit, and deleted translation files are never committed
 - **Multi-repository aware** — every Git repository open in VS Code that contains XLIFF files is handled
 
 ---
@@ -22,7 +22,7 @@ Keep your XLIFF translation files in sync without thinking about it. After every
 Commit as usual from the Source Control view. XLIFF Auto Sync then:
 
 1. runs the configured sync command (`xliffAutoSync.syncCommand`)
-2. stages all changed XLIFF files and commits them as `Xliff Translations`
+2. stages all changed XLIFF files except deleted ones and commits them as `Xliff Translations`
 3. pushes the branch if `xliffAutoSync.pushAfterCommit` is set to `always`
 
 Progress is shown in the status bar; details are logged to the **XLIFF Auto Sync** output channel.
@@ -52,7 +52,8 @@ Open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run **XLIFF Auto S
 >
 > - Only commits made through VS Code's Git integration (Source Control view, Git commands, other extensions using the Git API) trigger the sync. Commits made in a terminal or another Git client don't.
 > - All modified XLIFF files are included in the translation commit, not only the ones changed by the sync.
-> - Nothing is synced or committed while non-XLIFF files are staged, a merge has unresolved conflicts or a rebase is in progress.
+> - Deleted XLIFF files are never committed. If the sync deletes translation files, e.g. because the project doesn't build and no `.g.xlf` exists, they stay deleted in your working tree and a warning names them, so you can restore or commit them yourself.
+> - Nothing is synced or committed while non-XLIFF files or deleted XLIFF files are staged, a merge has unresolved conflicts or a rebase is in progress.
 > - With `git.untrackedChanges` set to `hidden`, new XLIFF files are invisible to VS Code and therefore not committed.
 
 ---

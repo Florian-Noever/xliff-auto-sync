@@ -75,6 +75,19 @@ suite('XLIFF sync flow', () => {
         fs.appendFileSync(path.join(repoPath, relativePath), `<!-- ${Date.now()} -->\n`);
     }
 
+    function deleteFile(relativePath: string): void {
+        fs.rmSync(path.join(repoPath, relativePath));
+    }
+
+    function isInHead(relativePath: string): boolean {
+        try {
+            git(repoPath, 'cat-file', '-e', `HEAD:${relativePath}`);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
     function lastCommitMessages(count: number): string[] {
         return git(repoPath, 'log', `-${count}`, '--format=%s').split('\n');
     }
@@ -105,10 +118,10 @@ suite('XLIFF sync flow', () => {
     }
 
     // After the fixture is opened, all writes go through the Git API to avoid index.lock races with the Git extension
-    async function discardSourceChanges(): Promise<void> {
-        const sourcePath = path.join(repoPath, SOURCE_FILE);
-        await repository.revert([sourcePath]);
-        await repository.clean([sourcePath]);
+    async function discardChanges(relativePath: string): Promise<void> {
+        const filePath = path.join(repoPath, relativePath);
+        await repository.revert([filePath]);
+        await repository.clean([filePath]);
     }
 
     suiteSetup(async () => {
@@ -170,7 +183,7 @@ suite('XLIFF sync flow', () => {
         assert.strictEqual(syncCalls - callsBefore, 1, 'the sync command should run exactly once');
         assert.deepStrictEqual(lastCommitMessages(2), [TRANSLATION_COMMIT_MESSAGE, 'Initial commit']);
         assert.deepStrictEqual(committedFiles(), [NEW_XLIFF, TARGET_XLIFF].sort());
-        await discardSourceChanges();
+        await discardChanges(SOURCE_FILE);
     });
 
     test('a commit made in VS Code triggers exactly one sync and translation commit', async () => {
@@ -198,7 +211,7 @@ suite('XLIFF sync flow', () => {
 
         assert.strictEqual(syncCalls - callsBefore, 0, 'the sync command should not run');
         assert.strictEqual(git(repoPath, 'rev-parse', 'HEAD'), headBefore);
-        await discardSourceChanges();
+        await discardChanges(SOURCE_FILE);
     });
 
     test('a failed commit does not trigger a sync', async () => {
@@ -208,6 +221,49 @@ suite('XLIFF sync flow', () => {
         await delay(SETTLE_DELAY);
 
         assert.strictEqual(syncCalls - callsBefore, 0, 'the sync command should not run');
+    });
+
+    test('a translation file deleted by the sync is not committed', async () => {
+        syncAction = () => {
+            deleteFile(TARGET_XLIFF);
+            appendLine(NEW_XLIFF);
+        };
+
+        await vscode.commands.executeCommand(COMMAND_COMMIT_TRANSLATIONS);
+        await delay(SETTLE_DELAY);
+
+        assert.deepStrictEqual(lastCommitMessages(1), [TRANSLATION_COMMIT_MESSAGE]);
+        assert.deepStrictEqual(committedFiles(), [NEW_XLIFF]);
+        assert.ok(isInHead(TARGET_XLIFF), 'the deleted translation file should still be in HEAD');
+        await discardChanges(TARGET_XLIFF);
+    });
+
+    test('nothing is committed when the sync only deletes translation files', async () => {
+        syncAction = () => deleteFile(TARGET_XLIFF);
+        const headBefore = git(repoPath, 'rev-parse', 'HEAD');
+        const callsBefore = syncCalls;
+
+        await vscode.commands.executeCommand(COMMAND_COMMIT_TRANSLATIONS);
+        await delay(SETTLE_DELAY);
+
+        assert.strictEqual(syncCalls - callsBefore, 1, 'the sync command should run exactly once');
+        assert.strictEqual(git(repoPath, 'rev-parse', 'HEAD'), headBefore);
+        assert.ok(isInHead(TARGET_XLIFF), 'the deleted translation file should still be in HEAD');
+        await discardChanges(TARGET_XLIFF);
+    });
+
+    test('a staged deletion of a translation file blocks the sync', async () => {
+        deleteFile(TARGET_XLIFF);
+        await repository.add([path.join(repoPath, TARGET_XLIFF)]);
+        const headBefore = git(repoPath, 'rev-parse', 'HEAD');
+        const callsBefore = syncCalls;
+
+        await vscode.commands.executeCommand(COMMAND_COMMIT_TRANSLATIONS);
+        await delay(SETTLE_DELAY);
+
+        assert.strictEqual(syncCalls - callsBefore, 0, 'the sync command should not run');
+        assert.strictEqual(git(repoPath, 'rev-parse', 'HEAD'), headBefore);
+        await discardChanges(TARGET_XLIFF);
     });
 
     test('pushes only branches that track an upstream branch', async () => {

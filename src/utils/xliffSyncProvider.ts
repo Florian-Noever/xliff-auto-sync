@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { MANIFEST } from '../extension';
 import type { Repository } from '../types/git';
@@ -5,7 +7,7 @@ import { getConfiguration } from './configuration';
 import { wrapError } from './errors';
 import { getGitApi, getRepositoryKey } from './gitUtils';
 import { Logger } from './logger';
-import { collectXliffPaths, getNonXliffPaths } from './xliffUtils';
+import { collectXliffPaths, getNonXliffPaths, splitDeletedPaths } from './xliffUtils';
 
 const COMMIT_MESSAGE = 'Xliff Translations';
 const XLIFF_FILES_GLOB = '**/*.{xlf,xliff}';
@@ -188,8 +190,16 @@ export class XliffSyncProvider implements vscode.Disposable {
                     return;
                 }
 
+                const { present, deleted } = splitDeletedPaths(xliffPaths, fs.existsSync);
+                if (deleted.length > 0) {
+                    showWarning(`${deleted.length} deleted XLIFF file(s) were not committed: ${deleted.map((fsPath) => path.basename(fsPath)).join(', ')}.`);
+                }
+                if (present.length === 0) {
+                    return;
+                }
+
                 progress.report({ message: 'Committing translations' });
-                await commitTranslations(repository, xliffPaths);
+                await commitTranslations(repository, present);
                 showStatus('Committed translation changes.');
 
                 if (push) {
@@ -226,7 +236,11 @@ function getCommitBlocker(repository: Repository): string | undefined {
         return 'There are unresolved merge conflicts.';
     }
     const stagedCount = getNonXliffPaths(state.indexChanges).length;
-    return stagedCount > 0 ? `${stagedCount} non-XLIFF file(s) are staged.` : undefined;
+    if (stagedCount > 0) {
+        return `${stagedCount} non-XLIFF file(s) are staged.`;
+    }
+    const stagedDeletionCount = splitDeletedPaths(collectXliffPaths(state.indexChanges), fs.existsSync).deleted.length;
+    return stagedDeletionCount > 0 ? `${stagedDeletionCount} deleted XLIFF file(s) are staged.` : undefined;
 }
 
 async function runSyncCommand(command: string): Promise<void> {

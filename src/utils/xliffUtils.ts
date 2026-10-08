@@ -16,7 +16,16 @@ export function getNonXliffPaths(changes: readonly ChangePaths[]): string[] {
     return getChangedPaths(changes).filter((fsPath) => !isXliffPath(fsPath));
 }
 
-// Original and renamed paths are included, so renames and deletions get staged completely
+export function splitDeletedPaths(paths: readonly string[], exists: (fsPath: string) => boolean): { present: string[]; deleted: string[] } {
+    const present: string[] = [];
+    const deleted: string[] = [];
+    for (const fsPath of paths) {
+        (exists(fsPath) ? present : deleted).push(fsPath);
+    }
+    return { present, deleted };
+}
+
+// Both sides of a rename are included, so the new file gets staged and the old one is recognized as deleted
 function getChangedPaths(changes: readonly ChangePaths[]): string[] {
     const uris = changes.flatMap((change) => [change.uri, change.originalUri, change.renameUri]);
     return [...new Set(uris.flatMap((uri) => uri ? [uri.fsPath] : []))];

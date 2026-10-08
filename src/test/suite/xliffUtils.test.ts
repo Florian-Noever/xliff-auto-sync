@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { type ChangePaths, collectXliffPaths, getNonXliffPaths, isXliffPath } from '../../utils/xliffUtils';
+import { type ChangePaths, collectXliffPaths, getNonXliffPaths, isXliffPath, splitDeletedPaths } from '../../utils/xliffUtils';
 
 function change(filePath: string, renamedTo?: string): ChangePaths {
     const originalUri = vscode.Uri.file(filePath);
@@ -41,5 +41,23 @@ suite('XLIFF utilities', () => {
     test('getNonXliffPaths returns only non-XLIFF files', () => {
         assert.deepStrictEqual(getNonXliffPaths([change('/repo/App.de-DE.xlf'), change('/repo/src/App.al')]), fsPaths('/repo/src/App.al'));
         assert.deepStrictEqual(getNonXliffPaths([change('/repo/App.de-DE.xlf')]), []);
+    });
+
+    test('splitDeletedPaths separates paths that no longer exist, keeping their order', () => {
+        const existing = new Set(['/repo/App.de-DE.xlf', '/repo/App.nl-NL.xlf']);
+
+        const { present, deleted } = splitDeletedPaths(['/repo/App.de-DE.xlf', '/repo/App.fr-FR.xlf', '/repo/App.nl-NL.xlf', '/repo/App.it-IT.xlf'], (fsPath) => existing.has(fsPath));
+
+        assert.deepStrictEqual(present, ['/repo/App.de-DE.xlf', '/repo/App.nl-NL.xlf']);
+        assert.deepStrictEqual(deleted, ['/repo/App.fr-FR.xlf', '/repo/App.it-IT.xlf']);
+    });
+
+    test('splitDeletedPaths treats the old side of a rename as deleted', () => {
+        const [newPath] = fsPaths('/repo/New.xlf');
+
+        const { present, deleted } = splitDeletedPaths(collectXliffPaths([change('/repo/Old.xlf', '/repo/New.xlf')]), (fsPath) => fsPath === newPath);
+
+        assert.deepStrictEqual(present, fsPaths('/repo/New.xlf'));
+        assert.deepStrictEqual(deleted, fsPaths('/repo/Old.xlf'));
     });
 });
